@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>WEBP对比测试</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" type="text/css" href="../libs/bootstrap/css/bs.min.css">
+        <script src="../libs/zepto/zepto.min.js"></script>
+        <style>
+            .jumbotron{
+                margin-top:1em;
+            }
+
+            .glyphicon-ok{ 
+                color: green;
+            }
+
+            .glyphicon-remove{
+                color: red;
+            }
+
+            .notsupport-warning{
+                margin-top: 1em;
+                display: none;
+            }
+
+            .notsupport .notsupport-warning{
+                display: block;
+            }
+
+            #file_selector{
+                display: none;
+            }
+
+            #result_panel{
+                display: none;
+            }
+
+            #result_panel table td{
+                font-size: 14px;
+            }
+
+            .groups{
+                width: 100%;
+                position: relative;
+            }
+
+            .groups .group{
+                width: 100%;
+                height: 100%;
+                position: relative;
+            }
+
+            .groups .group .title{
+                position: absolute;
+                top: .2em;
+                left: .2em;
+                padding: .2em;
+                background-color: #fff;
+            }
+
+            .groups .group-b{
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+
+            .groups .group-b:active{
+                visibility: hidden;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-1"></div>
+                <div class="col-md-10">
+                    <div class="row">
+                        <div><img src="webplogo.png"></div>
+                        <div class="alert alert-danger notsupport-warning">您的浏览器暂不支持WEBP格式，点击<a href="http://caniuse.com/#feat=webp">http://caniuse.com/#feat=webp</a>查看浏览器支持情况。</div>
+                        <div class="jumbotron">
+                            <h1>WEBP横向对比测试</h1>
+                            <p>测试关注压缩比、质量以及压缩效率</p>
+                            <p>点击按钮选择图片文件后，程序会自动进行压缩并计算结果</p>
+                            <p>点击结果图片可以切换不同的图片查看效果</p>
+                            <p>
+                                <label id="start_btn" for="file_selector" class="btn btn-primary btn-lg" role="button">选择图片开始测试</label>
+                                <input id="file_selector" type="file" multiple accept="image/jpeg"/>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <h3>当前浏览器WEBP兼容性<h3>
+                        <div id="feature_support"></div>
+                    </div>
+                    <div class="row" id="result_panel">
+                        <h3>对比结果<h3>
+
+                        <h4>耗时<h4>
+                        <div class="wrapper time">
+
+                        </div>
+                        <h4>体积<h4>
+                        <div class="wrapper size">
+
+                        </div>
+                        <h4>效果</h4>
+                        <div class="wrapper effect">
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-1"></div>
+            </div>
+        </div>
+    </body>
+    <script src="../libs/toblob/canvas-to-blob.js"></script>
+    <script src="feature_checker.js"></script>
+    <script src="compare.js"></script>
+
+    <script>
+        // Check feature support
+        FeatureChecker.checkAllAndDisplay( '#feature_support' );
+
+        var maxWidth = $( '.row .row' ).offset().width;
+
+        function GetCompareHtml( title, titlea, imga, titleb, imgb ) {
+
+            return '<h4>' + title + '</h4>' + 
+                    '<div class="image-compare">' + 
+                        '<div class="groups">' + 
+                            '<div class="group group-a">' + 
+                                '<span class="title">' + titlea + '</span>' + 
+                                '<img src="' + imga +'" onload="this.width > maxWidth ? this.width = maxWidth : void(0);"/>' + 
+                            '</div>' + 
+                            '<div class="group group-b">' + 
+                                '<span class="title">' + titleb + '</span>' + 
+                                '<img src="' + imgb + '" onload="this.width > maxWidth ? this.width = maxWidth : void(0);"/>' + 
+                            '</div>' + 
+                        '</div>' + 
+                    '</div>';
+        }
+
+        // Listen file picker
+        $( '#file_selector' ).on( 'change', function( e ){
+            var file = e.target.files[ 0 ],
+                src = window.URL.createObjectURL( file );
+
+            Compare.run( file, function( file ) {
+
+                $( '#result_panel' ).show();
+
+                var tableTime = [ '<table class="table table-bordered">' ],
+                    tableTimeHead = [ '<tr><td>压缩质量</td>' ],
+                    tableTimeJpeg = [ '<tr><td>JPEG(ms)</td>' ],
+                    tableTimeWebp = [ '<tr><td>WEBP(ms)</td>' ],
+                    tableSize = [ '<table class="table table-bordered">' ],
+                    tableSizeHead = [ '<tr><td>压缩质量</td>' ],
+                    tableSizeJpeg = [ '<tr><td>JPEG(KB)</td>' ],
+                    tableSizeWebp = [ '<tr><td>WEBP(KB)</td>' ],
+                    effects = [],
+                    jpegs = file.jpegs,
+                    webps = file.webps;
+
+                for( var q in jpegs ) {
+                    var j = jpegs[ q ],
+                        w = webps[ q ];
+
+                    tableTimeHead.push( '<td>' + q + '</td>');
+                    tableTimeJpeg.push( '<td>' + j.time + '</td>' );
+                    tableTimeWebp.push( '<td>' + w.time + '</td>' );
+
+                    tableSizeHead.push( '<td>' + q + '</td>');
+                    tableSizeJpeg.push( '<td>' + (j.size / 1024).toFixed(2) + '</td>' );
+                    tableSizeWebp.push( '<td>' + (w.size / 1024).toFixed(2) + '</td>' );
+
+                    effects.push( GetCompareHtml( 'Q = ' + q + ' (JPEG vs 原图)', '原图', src, 'JPEG', j.content ) );
+                    effects.push( GetCompareHtml( 'Q = ' + q + ' (WEBP vs 原图)', '原图', src, 'WEBP', w.content ) );
+                    effects.push( GetCompareHtml( 'Q = ' + q + ' (WEBP vs JPEG)', 'JPEG', j.content, 'WEBP', w.content ) );
+                }
+
+                tableTimeHead.push( '</tr>' );
+                tableTimeJpeg.push( '</tr>' );
+                tableTimeWebp.push( '</tr>' );
+
+                tableSizeHead.push( '</tr>' );
+                tableSizeJpeg.push( '</tr>' );
+                tableSizeWebp.push( '</tr>' );
+
+                tableTime = tableTime.concat( tableTimeHead )
+                        .concat( tableTimeJpeg ).concat( tableTimeWebp ).concat( [ '</table>' ] );
+
+                tableSize = tableSize.concat( tableSizeHead )
+                        .concat( tableSizeJpeg ).concat( tableSizeWebp ).concat( [ '</table>' ] );
+
+                $( '#result_panel .time' ).html( tableTime.join( '' ) );                
+                $( '#result_panel .size' ).html( tableSize.join( '' ) );
+
+                $( '#result_panel .effect' ).html( effects.join( '' ) );
+            }, {
+                maxHeight: 0,
+                maxWidth: maxWidth
+            } );
+        } );
+    </script>
+</html>

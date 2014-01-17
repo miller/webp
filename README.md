@@ -1,4 +1,4 @@
-webp
+WEBP
 ====
 
 REPORT ABOUT WEBP
