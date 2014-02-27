@@ -2,6 +2,5 @@ WEBP
 ====
 
 REPORT ABOUT WEBP.
-Run perf/index.html.
-
+Visit [http://miller.github.io/webp/](http://miller.github.io/webp/)
 ![perf/screenshot.png](perf/screenshot.png)
